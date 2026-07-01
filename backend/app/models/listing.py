@@ -17,6 +17,7 @@ class CategoryEnum(str, enum.Enum):
     accessories = "accessories"
     shoes = "shoes"
     formalwear = "formalwear"
+    south_asian = "south_asian"
 
 
 class ConditionEnum(str, enum.Enum):

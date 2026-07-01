@@ -56,6 +56,7 @@ class Rental(Base):
     )
     stripe_payment_intent_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     stripe_deposit_intent_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -68,6 +69,7 @@ class Rental(Base):
     owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id], back_populates="rentals_as_owner")
     review: Mapped["Review | None"] = relationship("Review", back_populates="rental", uselist=False)
     payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="rental")
+    messages: Mapped[list["Message"]] = relationship("Message", back_populates="rental", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_rentals_status", "status"),

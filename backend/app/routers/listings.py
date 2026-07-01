@@ -101,11 +101,13 @@ async def delete_listing(
 
 @router.get("/{listing_id}/availability", response_model=list[AvailabilityRange])
 async def get_availability(listing_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    blocked_statuses = [RentalStatusEnum.confirmed, RentalStatusEnum.shipped, RentalStatusEnum.active]
+    from datetime import timedelta
+    blocked_statuses = [RentalStatusEnum.confirmed, RentalStatusEnum.shipped, RentalStatusEnum.active, RentalStatusEnum.pending]
     result = await db.execute(
         select(Rental.start_date, Rental.end_date)
         .where(Rental.listing_id == listing_id)
         .where(Rental.status.in_(blocked_statuses))
     )
     ranges = result.all()
-    return [{"start_date": r.start_date, "end_date": r.end_date} for r in ranges]
+    buffer = timedelta(days=2)
+    return [{"start_date": r.start_date - buffer, "end_date": r.end_date + buffer} for r in ranges]

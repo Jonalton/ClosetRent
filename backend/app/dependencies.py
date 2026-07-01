@@ -24,18 +24,26 @@ async def get_current_user(
         )
 
     firebase_uid = decoded["uid"]
+    email = decoded.get("email", "")
+
     result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
     user = result.scalar_one_or_none()
+
+    if user is None and email:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if user is not None:
+            user.firebase_uid = firebase_uid
 
     if user is None:
         user = User(
             firebase_uid=firebase_uid,
-            email=decoded.get("email", ""),
-            display_name=decoded.get("name", decoded.get("email", "").split("@")[0]),
+            email=email,
+            display_name=decoded.get("name", email.split("@")[0]),
             avatar_url=decoded.get("picture"),
         )
         db.add(user)
-        await db.flush()
-        await db.refresh(user)
 
+    await db.flush()
+    await db.refresh(user)
     return user

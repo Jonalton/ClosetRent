@@ -58,6 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setFirebaseUser(null)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-400 text-lg">Loading...</div>
+      </div>
+    )
+  }
+
   return (
     <AuthContext.Provider value={{ firebaseUser, user, loading, signInWithGoogle, signOut }}>
       {children}

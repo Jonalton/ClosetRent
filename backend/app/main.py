@@ -7,7 +7,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.config import settings
 from app.middleware.cors import setup_cors
 from app.middleware.logging import setup_logging
-from app.routers import auth, users, listings, rentals, payments, reviews, search, storage
+from app.routers import auth, users, listings, rentals, payments, reviews, search, storage, messages
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
@@ -34,6 +34,7 @@ app.include_router(payments.router)
 app.include_router(reviews.router)
 app.include_router(search.router)
 app.include_router(storage.router)
+app.include_router(messages.router)
 
 
 @app.get("/health")

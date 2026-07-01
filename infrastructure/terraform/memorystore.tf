@@ -1,6 +1,6 @@
 resource "google_redis_instance" "cache" {
   name               = "closetrent-redis"
-  tier               = "STANDARD_HA"
+  tier               = "BASIC_HA"
   memory_size_gb     = 1
   region             = var.region
   authorized_network = google_compute_network.vpc.id

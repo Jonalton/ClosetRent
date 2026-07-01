@@ -1,10 +1,22 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
+import { messagesApi } from '../api/messages'
+import type { InboxItem } from '../types'
 
 export default function Navbar() {
   const { user, signInWithGoogle, signOut, loading } = useAuth()
   const navigate = useNavigate()
+
+  const { data: inboxItems } = useQuery<InboxItem[]>({
+    queryKey: ['inbox'],
+    queryFn: messagesApi.getInbox,
+    enabled: !!user,
+    refetchInterval: 30_000,
+  })
+
+  const hasMessages = (inboxItems?.length ?? 0) > 0
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -39,6 +51,17 @@ export default function Navbar() {
                 >
                   + List Item
                 </button>
+
+                {/* Inbox icon */}
+                <Link to="/inbox" className="relative p-1.5 text-gray-500 hover:text-brand-600 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {hasMessages && (
+                    <span className="absolute top-0.5 right-0.5 block w-2.5 h-2.5 bg-red-500 rounded-full" />
+                  )}
+                </Link>
+
                 <Link to="/profile">
                   <img
                     src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.display_name)}&background=c026d3&color=fff`}

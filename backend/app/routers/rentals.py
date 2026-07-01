@@ -1,12 +1,14 @@
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+import stripe
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.listing import Listing
 from app.models.rental import Rental, RentalStatusEnum, VALID_TRANSITIONS
+from app.models.user import User
 from app.schemas.rental import RentalCreate, RentalRead, RentalStatusUpdate
 from app.services.stripe_service import stripe_service
 
@@ -64,6 +66,123 @@ async def create_rental(
         deposit_cad=listing.deposit_cad,
         status=RentalStatusEnum.pending,
     )
+    db.add(rental)
+    await db.flush()
+    await db.refresh(rental)
+    return rental
+
+
+@router.post("/{rental_id}/approve", response_model=RentalRead)
+async def approve_rental(
+    rental_id: uuid.UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Rental).where(Rental.id == rental_id))
+    rental = result.scalar_one_or_none()
+    if not rental:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rental not found")
+    if rental.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only lister can approve")
+    if rental.status != RentalStatusEnum.pending:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rental is not pending")
+
+    renter_result = await db.execute(select(User).where(User.id == rental.renter_id))
+    renter = renter_result.scalar_one_or_none()
+    if not renter or not renter.stripe_customer_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Renter has no payment method on file")
+    if not current_user.stripe_account_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lister has not connected Stripe account")
+
+    try:
+        stripe_service.capture_deposit(rental)
+        stripe_service.charge_rental(rental, current_user.stripe_account_id, renter.stripe_customer_id)
+    except stripe.StripeError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.user_message or e))
+
+    rental.status = RentalStatusEnum.confirmed
+    db.add(rental)
+    await db.flush()
+    await db.refresh(rental)
+    return rental
+
+
+@router.post("/{rental_id}/decline", response_model=RentalRead)
+async def decline_rental(
+    rental_id: uuid.UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Rental).where(Rental.id == rental_id))
+    rental = result.scalar_one_or_none()
+    if not rental:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rental not found")
+    if rental.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only lister can decline")
+    if rental.status != RentalStatusEnum.pending:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rental is not pending")
+
+    try:
+        stripe_service.cancel_deposit(rental)
+    except stripe.StripeError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.user_message or e))
+
+    rental.status = RentalStatusEnum.cancelled
+    db.add(rental)
+    await db.flush()
+    await db.refresh(rental)
+    return rental
+
+
+@router.post("/{rental_id}/mark_returned", response_model=RentalRead)
+async def mark_returned(
+    rental_id: uuid.UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Rental).where(Rental.id == rental_id))
+    rental = result.scalar_one_or_none()
+    if not rental:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rental not found")
+    if rental.renter_id != current_user.id and rental.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    if rental.status != RentalStatusEnum.active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rental is not active")
+
+    rental.status = RentalStatusEnum.returned
+    rental.returned_at = datetime.now(timezone.utc)
+    db.add(rental)
+    await db.flush()
+    await db.refresh(rental)
+    return rental
+
+
+@router.post("/{rental_id}/release_deposit", response_model=RentalRead)
+async def release_deposit(
+    rental_id: uuid.UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Rental).where(Rental.id == rental_id))
+    rental = result.scalar_one_or_none()
+    if not rental:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rental not found")
+    if rental.status != RentalStatusEnum.returned:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rental is not in returned state")
+    if not rental.returned_at:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="returned_at not set")
+
+    now = datetime.now(timezone.utc)
+    returned_at = rental.returned_at if rental.returned_at.tzinfo else rental.returned_at.replace(tzinfo=timezone.utc)
+    hours_elapsed = (now - returned_at).total_seconds() / 3600
+    if hours_elapsed < 48:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Deposit can only be released after 48h. {48 - hours_elapsed:.1f}h remaining.",
+        )
+
+    stripe_service.refund_deposit(rental)
+    rental.status = RentalStatusEnum.completed
     db.add(rental)
     await db.flush()
     await db.refresh(rental)

@@ -78,6 +78,45 @@ resource "google_cloud_run_v2_service" "backend" {
           }
         }
       }
+      env {
+        name = "STRIPE_CONNECT_CLIENT_ID"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.secrets["stripe-connect-client-id"].secret_id
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "ALGOLIA_APP_ID"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.secrets["algolia-app-id"].secret_id
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "ALGOLIA_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.secrets["algolia-api-key"].secret_id
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name  = "FIREBASE_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
+      env {
+        name  = "CORS_ORIGINS"
+        value = var.cors_origins
+      }
 
       ports {
         container_port = 8000

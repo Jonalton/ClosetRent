@@ -31,16 +31,13 @@ def upgrade() -> None:
     op.create_index("ix_users_firebase_uid", "users", ["firebase_uid"])
     op.create_index("ix_users_email", "users", ["email"])
 
-    op.execute("CREATE TYPE categoryenum AS ENUM ('tops','bottoms','dresses','outerwear','accessories','shoes','formalwear')")
-    op.execute("CREATE TYPE conditionenum AS ENUM ('excellent','good','fair')")
-
     op.create_table(
         "listings",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, default=sa.text("gen_random_uuid()")),
         sa.Column("owner_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.String(5000), nullable=False),
-        sa.Column("category", sa.Enum("tops","bottoms","dresses","outerwear","accessories","shoes","formalwear", name="categoryenum"), nullable=False),
+        sa.Column("category", sa.Enum("tops","bottoms","dresses","outerwear","accessories","shoes","formalwear","south_asian", name="categoryenum"), nullable=False),
         sa.Column("size", sa.String(20), nullable=False),
         sa.Column("brand", sa.String(100), nullable=False),
         sa.Column("retail_price_cad", sa.Numeric(10, 2), nullable=False),
@@ -56,8 +53,6 @@ def upgrade() -> None:
     op.create_index("ix_listings_owner_id", "listings", ["owner_id"])
     op.create_index("ix_listings_category", "listings", ["category"])
     op.create_index("ix_listings_is_available", "listings", ["is_available"])
-
-    op.execute("CREATE TYPE rentalstatusenum AS ENUM ('pending','confirmed','shipped','active','returned','completed','cancelled','disputed')")
 
     op.create_table(
         "rentals",
@@ -81,8 +76,6 @@ def upgrade() -> None:
     op.create_index("ix_rentals_status", "rentals", ["status"])
     op.create_index("ix_rentals_dates", "rentals", ["start_date", "end_date"])
 
-    op.execute("CREATE TYPE paymentstatusenum AS ENUM ('pending','succeeded','failed','refunded')")
-
     op.create_table(
         "payments",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, default=sa.text("gen_random_uuid()")),
@@ -95,8 +88,6 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
     op.create_index("ix_payments_rental_id", "payments", ["rental_id"])
-
-    op.execute("CREATE TYPE reviewtypeenum AS ENUM ('renter_to_owner','owner_to_renter')")
 
     op.create_table(
         "reviews",

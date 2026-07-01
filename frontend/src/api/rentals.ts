@@ -26,4 +26,8 @@ export const rentalsApi = {
     const res = await apiClient.post('/api/payments/checkout', { rental_id })
     return res.data
   },
+
+  approve: (id: string) => apiClient.post(`/api/rentals/${id}/approve`).then(r => r.data),
+  decline: (id: string) => apiClient.post(`/api/rentals/${id}/decline`).then(r => r.data),
+  markReturned: (id: string) => apiClient.post(`/api/rentals/${id}/mark_returned`).then(r => r.data),
 }

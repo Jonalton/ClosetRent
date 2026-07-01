@@ -1,4 +1,4 @@
-export type Category = 'tops' | 'bottoms' | 'dresses' | 'outerwear' | 'accessories' | 'shoes' | 'formalwear'
+export type Category = 'tops' | 'bottoms' | 'dresses' | 'outerwear' | 'accessories' | 'shoes' | 'formalwear' | 'south_asian'
 export type Condition = 'excellent' | 'good' | 'fair'
 export type RentalStatus =
   | 'pending'
@@ -74,6 +74,25 @@ export interface Review {
 export interface AvailabilityRange {
   start_date: string
   end_date: string
+}
+
+export interface Message {
+  id: string
+  sender_id: string
+  sender_name: string
+  sender_avatar: string | null
+  body: string
+  created_at: string
+}
+
+export interface InboxItem {
+  rental_id: string
+  listing_title: string
+  other_party_name: string
+  other_party_avatar: string | null
+  last_message: string | null
+  last_message_at: string | null
+  message_count: number
 }
 
 export interface CheckoutResponse {

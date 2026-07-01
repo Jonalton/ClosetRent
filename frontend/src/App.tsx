@@ -11,6 +11,8 @@ import Dashboard from './pages/Dashboard'
 import RenterDashboard from './pages/RenterDashboard'
 import Checkout from './pages/Checkout'
 import Profile from './pages/Profile'
+import Inbox from './pages/Inbox'
+import BookingThread from './pages/BookingThread'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +39,8 @@ export default function App() {
               <Route path="/renter-dashboard" element={<RenterDashboard />} />
               <Route path="/checkout/:rentalId" element={<Checkout />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/inbox" element={<Inbox />} />
+              <Route path="/inbox/:rentalId" element={<BookingThread />} />
               <Route path="*" element={
                 <div className="text-center py-20 text-gray-400">
                   <p className="text-4xl font-bold mb-2">404</p>

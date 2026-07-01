@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { listingsApi } from '../api/listings'
 import ListingCard from '../components/ListingCard'
 
-const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear', 'accessories', 'shoes', 'formalwear']
+const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear', 'accessories', 'shoes', 'formalwear', 'south_asian']
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '0', '2', '4', '6', '8', '10', '12']
 
 export default function Browse() {

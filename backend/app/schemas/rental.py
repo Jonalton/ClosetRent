@@ -33,7 +33,27 @@ class RentalRead(BaseModel):
     status: RentalStatusEnum
     stripe_payment_intent_id: str | None = None
     stripe_deposit_intent_id: str | None = None
+    returned_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BookingRequestSchema(BaseModel):
+    listing_id: uuid.UUID
+    start_date: date
+    end_date: date
+    message: str
+    payment_method_id: str
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> "BookingRequestSchema":
+        if self.end_date <= self.start_date:
+            raise ValueError("end_date must be after start_date")
+        return self
+
+
+class BookingResponseSchema(BaseModel):
+    rental_id: uuid.UUID
+    client_secret: str

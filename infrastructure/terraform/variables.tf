@@ -26,3 +26,8 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "cors_origins" {
+  description = "Comma-separated allowed CORS origins (e.g. your Firebase Hosting URL)"
+  type        = string
+}

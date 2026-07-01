@@ -70,16 +70,27 @@ jobs:
       - name: Run database migrations
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
         run: |
+          # DATABASE_URL is passed as a plain env var (host + password are needed to build it)
+          # The Cloud Run Job inherits the VPC connector so it can reach the private Cloud SQL IP
           gcloud run jobs create closetrent-migrate-${{ github.sha }} \
             --image "$IMAGE_URI" \
             --region "${{ env.GCP_REGION }}" \
             --project "${GCP_PROJECT_ID}" \
+            --vpc-connector "closetrent-vpc-connector" \
+            --service-account "${{ secrets.CLOUD_RUN_SA }}" \
             --command "alembic" \
             --args "upgrade,head" \
-            --set-secrets="DATABASE_URL=db-connection-string:latest" \
+            --set-env-vars="DATABASE_URL=postgresql+asyncpg://closetrent:${DB_PASSWORD}@${DB_HOST}/closetrent,GCP_PROJECT_ID=${GCP_PROJECT_ID},ENVIRONMENT=production,FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},GCS_BUCKET_NAME=closetrent-listing-images-${GCP_PROJECT_ID},REDIS_URL=redis://localhost:6379,ALGOLIA_APP_ID=,ALGOLIA_API_KEY=,STRIPE_CONNECT_CLIENT_ID=placeholder" \
+            --set-secrets="STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,FIREBASE_SERVICE_ACCOUNT_JSON=firebase-service-account-json:latest" \
             --execute-now \
-            --wait || true
+            --wait
+          gcloud run jobs delete closetrent-migrate-${{ github.sha }} \
+            --region "${{ env.GCP_REGION }}" \
+            --project "${GCP_PROJECT_ID}" \
+            --quiet
 
   deploy-frontend:
     name: Deploy Frontend to Firebase Hosting

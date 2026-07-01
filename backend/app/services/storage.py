@@ -1,11 +1,19 @@
+import json
 import datetime
 from google.cloud import storage
+from google.oauth2 import service_account
 from app.config import settings
 
 
 class StorageService:
     def __init__(self):
-        self.client = storage.Client(project=settings.GCP_PROJECT_ID)
+        sa_info = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
+        credentials = service_account.Credentials.from_service_account_info(
+            sa_info,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        self.client = storage.Client(project=settings.GCP_PROJECT_ID, credentials=credentials)
+        self.credentials = credentials
         self.bucket_name = settings.GCS_BUCKET_NAME
 
     def generate_signed_upload_url(self, object_name: str, content_type: str) -> dict:
@@ -17,6 +25,7 @@ class StorageService:
             expiration=datetime.timedelta(minutes=15),
             method="PUT",
             content_type=content_type,
+            credentials=self.credentials,
         )
 
         public_url = f"https://storage.googleapis.com/{self.bucket_name}/{object_name}"
