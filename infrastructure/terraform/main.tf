@@ -48,15 +48,39 @@ resource "google_compute_subnetwork" "subnet" {
   region        = var.region
 }
 
+# Private services connection — required for Cloud SQL and Memorystore to get private IPs
+resource "google_compute_global_address" "private_ip_range" {
+  name          = "closetrent-private-ip-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.vpc.id
+}
+
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = google_compute_network.vpc.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+  depends_on              = [google_project_service.apis]
+}
+
+# Dedicated /28 subnet required by VPC Access Connector (cannot share with other resources)
+resource "google_compute_subnetwork" "connector_subnet" {
+  name          = "closetrent-connector-subnet"
+  ip_cidr_range = "10.0.1.0/28"
+  network       = google_compute_network.vpc.id
+  region        = var.region
+}
+
 # VPC Connector for Cloud Run → Cloud SQL/Redis
 resource "google_vpc_access_connector" "connector" {
   name          = "closetrent-vpc-connector"
   region        = var.region
   subnet {
-    name = google_compute_subnetwork.subnet.name
+    name = google_compute_subnetwork.connector_subnet.name
   }
   machine_type  = "e2-micro"
   min_instances = 2
   max_instances = 3
-  depends_on    = [google_project_service.apis]
+  depends_on    = [google_project_service.apis, google_compute_subnetwork.connector_subnet]
 }

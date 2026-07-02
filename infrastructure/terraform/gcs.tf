@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "listing_images" {
-  name                        = "closetrent-listing-images-${var.project_id}"
+  name                        = "closetrent-listing-images"
   location                    = var.region
   uniform_bucket_level_access = true
   force_destroy               = false
