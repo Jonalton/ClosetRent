@@ -119,7 +119,7 @@ export default function Checkout() {
         setCheckoutError('Failed to initialize payment. Please try again.')
       })
     }
-  }, [rental])
+  }, [rental, checkoutData])
 
   if (isLoading || (!checkoutData && !checkoutError)) {
     return (

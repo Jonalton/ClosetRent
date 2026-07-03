@@ -9,6 +9,7 @@ import { paymentsApi } from '../api/payments'
 import BookingCalendar from '../components/BookingCalendar'
 import { useAuth } from '../context/AuthContext'
 import { format } from 'date-fns'
+import type { Listing } from '../types'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -95,7 +96,7 @@ function SignInModal({ onClose, onSignIn }: { onClose: () => void; onSignIn: () 
   )
 }
 
-function BookingPanel({ listing }: { listing: any }) {
+function BookingPanel({ listing }: { listing: Listing }) {
   const { user, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
   const stripe = useStripe()
@@ -167,8 +168,9 @@ function BookingPanel({ listing }: { listing: any }) {
       }
 
       setSuccess(true)
-    } catch (e: any) {
-      setError(e?.response?.data?.detail || 'Something went wrong. Please try again.')
+    } catch (e) {
+      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setError(detail || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
     }
