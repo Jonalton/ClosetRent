@@ -11,8 +11,6 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-if os.environ.get("DATABASE_URL"):
-    config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
 
 from app.database import Base
 from app.models import User, Listing, Rental, Payment, Review  # noqa: F401
@@ -21,7 +19,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
+    url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -39,10 +37,9 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
+    db_url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
     connectable = async_engine_from_config(
-        configuration,
+        {"sqlalchemy.url": db_url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
