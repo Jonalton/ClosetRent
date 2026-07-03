@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { DayPicker, DateRange } from 'react-day-picker'
 import { useQuery } from '@tanstack/react-query'
 import { isBefore, startOfDay, isWithinInterval, parseISO } from 'date-fns'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listingsApi } from '../api/listings'
@@ -8,7 +8,7 @@ const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear', 'accessories', 's
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '0', '2', '4', '6', '8', '10', '12']
 
 export default function Browse() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const [category, setCategory] = useState(searchParams.get('category') || '')
   const [size, setSize] = useState('')
   const [page, setPage] = useState(0)

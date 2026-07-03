@@ -1,4 +1,4 @@
-import React, { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from 'react'
+import { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { listingsApi } from '../api/listings'
 import axios from 'axios'

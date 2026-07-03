@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { usersApi } from '../api/users'
 import { useAuth } from '../context/AuthContext'
 
