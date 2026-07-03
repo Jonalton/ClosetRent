@@ -21,7 +21,7 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           query: ['@tanstack/react-query'],
           stripe: ['@stripe/react-stripe-js', '@stripe/stripe-js'],
-          firebase: ['firebase'],
+          firebase: ['firebase/app', 'firebase/auth'],
         },
       },
     },
