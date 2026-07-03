@@ -1,9 +1,9 @@
 {
   "projects": {
-    "default": "YOUR_FIREBASE_PROJECT_ID"
+    "default": "closetrent"
   },
   "targets": {
-    "YOUR_FIREBASE_PROJECT_ID": {
+    "closetrent": {
       "hosting": {
         "closetrent": ["closetrent"]
       }
