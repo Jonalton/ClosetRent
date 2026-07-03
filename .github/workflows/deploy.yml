@@ -71,20 +71,22 @@ jobs:
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          # DB_PASSWORD is pulled from Secret Manager at runtime via --set-secrets.
-          # DB_HOST is a plain env var (just an IP, no special characters).
-          # DATABASE_URL is assembled inside the container via a shell wrapper command.
+          # URL-encode the password so special characters don't break the connection string
+          ENCODED_PASSWORD=$(python3 -c "import urllib.parse, os; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")
+          DATABASE_URL="postgresql+asyncpg://closetrent:${ENCODED_PASSWORD}@${DB_HOST}/closetrent"
+
           gcloud run jobs create closetrent-migrate-${{ github.sha }} \
             --image "$IMAGE_URI" \
             --region "${{ env.GCP_REGION }}" \
             --project "${GCP_PROJECT_ID}" \
             --vpc-connector "closetrent-vpc-connector" \
             --service-account "closetrent-cloud-run@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
-            --command "/bin/sh" \
-            --args "-c,DATABASE_URL=postgresql+asyncpg://closetrent:\$DB_PASSWORD@${DB_HOST}/closetrent alembic upgrade head" \
-            --set-env-vars="GCP_PROJECT_ID=${GCP_PROJECT_ID},ENVIRONMENT=production,FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},GCS_BUCKET_NAME=closetrent-listing-images,REDIS_URL=redis://localhost:6379,ALGOLIA_APP_ID=,ALGOLIA_API_KEY=,STRIPE_CONNECT_CLIENT_ID=placeholder" \
-            --set-secrets="DB_PASSWORD=db-password:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,FIREBASE_SERVICE_ACCOUNT_JSON=firebase-service-account-json:latest" \
+            --command "alembic" \
+            --args "upgrade,head" \
+            --set-env-vars="DATABASE_URL=${DATABASE_URL},GCP_PROJECT_ID=${GCP_PROJECT_ID},ENVIRONMENT=production,FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},GCS_BUCKET_NAME=closetrent-listing-images,REDIS_URL=redis://localhost:6379,ALGOLIA_APP_ID=,ALGOLIA_API_KEY=,STRIPE_CONNECT_CLIENT_ID=placeholder" \
+            --set-secrets="STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,FIREBASE_SERVICE_ACCOUNT_JSON=firebase-service-account-json:latest" \
             --execute-now \
             --wait
           gcloud run jobs delete closetrent-migrate-${{ github.sha }} \
