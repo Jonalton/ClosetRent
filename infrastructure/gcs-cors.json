@@ -1,0 +1,13 @@
+[
+  {
+    "origin": [
+      "https://closetrent.web.app",
+      "https://closetrent.firebaseapp.com",
+      "https://closetrent.ca",
+      "http://localhost:5173"
+    ],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]
