@@ -66,7 +66,7 @@ jobs:
             --project "${GCP_PROJECT_ID}" \
             --platform managed \
             --service-account "closetrent-cloud-run@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
-            --set-env-vars="GCP_PROJECT_ID=${GCP_PROJECT_ID},ENVIRONMENT=production,FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},GCS_BUCKET_NAME=closetrent-listing-images,CORS_ORIGINS=https://closetrent.web.app,https://closetrent.ca,https://closetrent.firebaseapp.com,ALGOLIA_APP_ID=,ALGOLIA_API_KEY=,STRIPE_CONNECT_CLIENT_ID=placeholder,REDIS_URL=placeholder" \
+            --env-vars-file=".github/workflows/cloud-run-env.yaml" \
             --set-secrets="DATABASE_URL=database-url:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,FIREBASE_SERVICE_ACCOUNT_JSON=firebase-service-account-json:latest" \
             --allow-unauthenticated \
             --quiet
